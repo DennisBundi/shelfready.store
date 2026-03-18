@@ -1,0 +1,64 @@
+{
+  "name": "TechsCrafts LinkedIn Error Handler",
+  "nodes": [
+    {
+      "id": "f2a3b4c5-d6e7-8901-fabc-012345678901",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "parameters": {}
+    },
+    {
+      "id": "a3b4c5d6-e7f8-9012-abcd-123456789012",
+      "name": "Send Error Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID_PLACEHOLDER/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "From", "value": "whatsapp:+14155238886" },
+            { "name": "To", "value": "whatsapp:+254113303583" },
+            {
+              "name": "Body",
+              "value": "=❌ TechsCrafts LinkedIn automation FAILED!\n\nWorkflow: {{ $json.workflow.name }}\nError: {{ $json.execution.error.message }}\nLast Node: {{ $json.execution.lastNodeExecuted }}\nTime: {{ new Date($json.execution.startedAt).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) }}\n\nCheck n8n dashboard for details."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "twilio-basic-auth",
+          "name": "Twilio Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [{ "node": "Send Error Alert", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "techscrafts-automation"
+  }
+}

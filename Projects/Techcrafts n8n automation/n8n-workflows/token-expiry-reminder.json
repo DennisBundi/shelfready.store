@@ -1,0 +1,124 @@
+{
+  "name": "TechsCrafts LinkedIn Token Expiry Reminder",
+  "nodes": [
+    {
+      "id": "b4c5d6e7-f8a9-0123-bcde-234567890123",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        },
+        "timezone": "Africa/Nairobi"
+      }
+    },
+    {
+      "id": "c5d6e7f8-a9b0-1234-cdef-345678901234",
+      "name": "Check Token Age",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const tokenCreatedDate = new Date('2026-03-18');\nconst today = new Date();\nconst daysSinceCreation = Math.floor((today - tokenCreatedDate) / (1000 * 60 * 60 * 24));\nconst daysUntilExpiry = 60 - daysSinceCreation;\n\nif (daysUntilExpiry <= 5) {\n  return [{ json: { sendAlert: true, daysUntilExpiry } }];\n}\n\nreturn [{ json: { sendAlert: false, daysUntilExpiry } }];"
+      }
+    },
+    {
+      "id": "d6e7f8a9-b0c1-2345-defa-456789012345",
+      "name": "IF Token Expiring",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e7f8a9b0-c1d2-3456-efab-567890123456",
+              "leftValue": "={{ $json.sendAlert }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "f8a9b0c1-d2e3-4567-fabc-678901234567",
+      "name": "Send Token Expiry Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID_PLACEHOLDER/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "From", "value": "whatsapp:+14155238886" },
+            { "name": "To", "value": "whatsapp:+254113303583" },
+            {
+              "name": "Body",
+              "value": "=⚠️ ACTION REQUIRED: LinkedIn Access Token Expiring!\n\nYour LinkedIn API token expires in {{ $('Check Token Age').first().json.daysUntilExpiry }} day(s).\n\nThe TechsCrafts LinkedIn automation will stop posting if the token is not renewed.\n\nSteps to renew:\n1. Go to https://www.linkedin.com/developers/\n2. Navigate to your app\n3. Generate a new access token\n4. Update the credential in n8n\n\nDo this before the token expires to avoid missing scheduled posts."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "twilio-basic-auth",
+          "name": "Twilio Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [{ "node": "Check Token Age", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Token Age": {
+      "main": [
+        [{ "node": "IF Token Expiring", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF Token Expiring": {
+      "main": [
+        [{ "node": "Send Token Expiry Alert", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "techscrafts-automation"
+  }
+}

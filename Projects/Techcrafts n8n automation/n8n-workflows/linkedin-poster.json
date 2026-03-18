@@ -1,0 +1,306 @@
+{
+  "name": "TechsCrafts LinkedIn Poster",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1,3,5"
+            }
+          ]
+        },
+        "timezone": "Africa/Nairobi"
+      }
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "Select Content Pillar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const topics = {\n  education: [\n    \"gross profit margin and why most founders don't track it\",\n    \"the difference between revenue and cash in hand\",\n    \"how to build a simple weekly cash flow tracker\",\n    \"what a business dashboard should show you every Monday morning\",\n    \"the three numbers every service business must know\",\n    \"how to measure team productivity without micromanaging\",\n    \"what an operations audit actually looks at\",\n    \"how to identify your most profitable service line\",\n    \"why your P&L is lying to you and what to read instead\",\n    \"how to set up a basic reporting system in under a week\",\n    \"what KPIs actually matter for a Nairobi SME\",\n    \"the difference between being busy and being productive\",\n    \"how to track customer acquisition cost without a big budget\",\n    \"what good inventory management looks like for a small business\",\n    \"how to build an SOP for your most repeated task\",\n    \"why every founder needs a 13-week cash flow forecast\",\n    \"how to measure client retention and why it matters more than new sales\",\n    \"what financial visibility actually means for a small business\",\n    \"how to run a monthly business review in 30 minutes\",\n    \"the one metric that predicts whether your business will survive the next 6 months\"\n  ],\n  pain: [\n    \"not knowing if your business made money last month\",\n    \"your best employee quitting and taking all the knowledge with them\",\n    \"saying yes to every client because you don't know which ones are profitable\",\n    \"running out of cash despite having a full order book\",\n    \"spending your Sunday firefighting instead of resting\",\n    \"not being able to take a week off because everything depends on you\",\n    \"making decisions based on what feels right instead of what the numbers say\",\n    \"your team doing things differently every time with no standard process\",\n    \"chasing invoices every month because there is no payment system\",\n    \"hiring someone and realizing three months later they have been underperforming\",\n    \"not knowing your real margins until an accountant tells you six months later\",\n    \"losing a client and not knowing why\",\n    \"your phone being the only place your business information lives\",\n    \"being the most hardworking person in your business but still not growing\",\n    \"making the same operational mistake for the third time\",\n    \"your business running you instead of you running your business\",\n    \"quoting jobs by gut feel and constantly undercharging\",\n    \"no system for following up with leads so they just go cold\",\n    \"three different team members giving three different answers to the same client question\",\n    \"growing revenue but somehow having less cash than last year\"\n  ],\n  reframe: [\n    \"hustle harder is not a growth strategy\",\n    \"hiring more staff will not fix a broken process\",\n    \"your business does not need more clients — it needs better systems\",\n    \"working 16-hour days is a symptom not a badge of honor\",\n    \"a beautiful brand means nothing if operations are broken underneath\",\n    \"more revenue does not mean more profit\",\n    \"the problem is not your team — it is the system they are working in\",\n    \"passion alone has never scaled a business\",\n    \"being busy is not the same as being productive\",\n    \"your competitor is not your biggest threat — your own operations are\",\n    \"you do not need a business loan — you need visibility into what you already have\",\n    \"delegation fails without documentation\",\n    \"the founders who scale are not the most talented — they are the most systematic\",\n    \"growth without systems just creates bigger chaos\",\n    \"your gut feeling is not a strategy\"\n  ]\n};\n\nconst day = new Date().getDay();\nlet pillar;\nif (day === 1) pillar = 'education';\nelse if (day === 3) pillar = 'pain';\nelse if (day === 5) pillar = 'reframe';\nelse pillar = 'education';\n\nconst topicList = topics[pillar];\nconst topic = topicList[Math.floor(Math.random() * topicList.length)];\n\nreturn [{ json: { pillar, topic } }];"
+      }
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "name": "Build Claude Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const { pillar, topic } = $input.first().json;\n\nconst pillarInstructions = {\n  education: `Write an educational LinkedIn post teaching Kenyan founders and SME owners about: \"${topic}\". Make it practical and specific. Give them one actionable insight they can use this week.`,\n  pain: `Write a LinkedIn post about the pain of: \"${topic}\". Make founders feel deeply seen. Mirror their frustration back to them. Do not offer a solution yet — just make them nod their head in recognition.`,\n  reframe: `Write a LinkedIn post that challenges this common belief: \"${topic}\". Flip the narrative. Replace the old belief with a systems-first mindset. Be direct and confident.`\n};\n\nconst systemPrompt = `You are a LinkedIn content writer for TechsCrafts, a digital systems consultancy based in Nairobi, Kenya founded by Dennis Bundi Kimathi.\\n\\nBrand voice: Direct, confident, no-fluff, founder-to-founder. You speak to Kenyan SME owners and startup founders who are working hard but lack operational visibility.\\n\\nCore message: \"You are not failing because you are not working hard enough. You are failing because your business is running on guesswork instead of systems.\"\\n\\nRules:\\n- 150 to 300 words\\n- No hashtag spam (max 3 relevant hashtags at the end)\\n- End every post with a soft CTA: invite them to book a free business operations audit at TechsCrafts\\n- Write in first person as Dennis Bundi\\n- No corporate jargon, no fluff\\n- Nairobi-grounded — reference the Kenyan business context naturally\\n- Short punchy paragraphs, not walls of text\\n- Use line breaks for readability`;\n\nconst userInstruction = pillarInstructions[pillar];\n\nreturn [{ json: { systemPrompt, userInstruction, pillar, topic } }];"
+      }
+    },
+    {
+      "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+      "name": "Generate LinkedIn Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 600,\n  \"system\": \"{{ $('Build Claude Prompt').first().json.systemPrompt }}\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $('Build Claude Prompt').first().json.userInstruction }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "anthropic-api-key",
+          "name": "Anthropic API Key"
+        }
+      }
+    },
+    {
+      "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+      "name": "List Pillar Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1040, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/drive/v3/files?q='FOLDER_ID_PLACEHOLDER'+in+parents+and+name+contains+'{{ $('Select Content Pillar').first().json.pillar }}'&fields=files(id,name)",
+        "authentication": "oAuth2",
+        "options": {}
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "google-drive-oauth2",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+      "name": "Pick Random Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1240, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const files = $input.all();\n\nif (files.length === 0) {\n  return [{ json: { fileId: 'DEFAULT_IMAGE_FILE_ID_PLACEHOLDER', fileName: 'default.png' } }];\n}\n\nconst randomFile = files[Math.floor(Math.random() * files.length)];\nreturn [{ json: { fileId: randomFile.json.id, fileName: randomFile.json.name } }];"
+      }
+    },
+    {
+      "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.fileId }}?alt=media",
+        "authentication": "oAuth2",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "google-drive-oauth2",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+      "name": "Register LinkedIn Image Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1640, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/assets?action=registerUpload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "{\n  \"registerUploadRequest\": {\n    \"recipes\": [\"urn:li:digitalmediaRecipe:feedshare-image\"],\n    \"owner\": \"urn:li:organization:ORG_ID_PLACEHOLDER\",\n    \"serviceRelationships\": [\n      {\n        \"relationshipType\": \"OWNER\",\n        \"identifier\": \"urn:li:userGeneratedContent\"\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-bearer-token",
+          "name": "LinkedIn Bearer Token"
+        }
+      }
+    },
+    {
+      "id": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+      "name": "Upload Image to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1840, 300],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/octet-stream" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "d0e1f2a3-b4c5-6789-defa-890123456789",
+      "name": "Publish LinkedIn Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2040, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"author\": \"urn:li:organization:ORG_ID_PLACEHOLDER\",\n  \"lifecycleState\": \"PUBLISHED\",\n  \"specificContent\": {\n    \"com.linkedin.ugc.ShareContent\": {\n      \"shareCommentary\": {\n        \"text\": \"{{ $('Generate LinkedIn Post').first().json.content[0].text }}\"\n      },\n      \"shareMediaCategory\": \"IMAGE\",\n      \"media\": [\n        {\n          \"status\": \"READY\",\n          \"description\": {\n            \"text\": \"TechsCrafts LinkedIn Post\"\n          },\n          \"media\": \"{{ $('Register LinkedIn Image Upload').first().json.value.asset }}\",\n          \"title\": {\n            \"text\": \"TechsCrafts\"\n          }\n        }\n      ]\n    }\n  },\n  \"visibility\": {\n    \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\"\n  }\n}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "linkedin-bearer-token",
+          "name": "LinkedIn Bearer Token"
+        }
+      }
+    },
+    {
+      "id": "e1f2a3b4-c5d6-7890-efab-901234567890",
+      "name": "Send Success Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2240, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID_PLACEHOLDER/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "From", "value": "whatsapp:+14155238886" },
+            { "name": "To", "value": "whatsapp:+254113303583" },
+            { "name": "Body", "value": "=✅ TechsCrafts LinkedIn post published successfully!\n\nPillar: {{ $('Select Content Pillar').first().json.pillar }}\nTopic: {{ $('Select Content Pillar').first().json.topic }}\nTime: {{ new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "twilio-basic-auth",
+          "name": "Twilio Basic Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [{ "node": "Select Content Pillar", "type": "main", "index": 0 }]
+      ]
+    },
+    "Select Content Pillar": {
+      "main": [
+        [{ "node": "Build Claude Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Claude Prompt": {
+      "main": [
+        [{ "node": "Generate LinkedIn Post", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate LinkedIn Post": {
+      "main": [
+        [{ "node": "List Pillar Images", "type": "main", "index": 0 }]
+      ]
+    },
+    "List Pillar Images": {
+      "main": [
+        [{ "node": "Pick Random Image", "type": "main", "index": 0 }]
+      ]
+    },
+    "Pick Random Image": {
+      "main": [
+        [{ "node": "Download Image", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [{ "node": "Register LinkedIn Image Upload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Register LinkedIn Image Upload": {
+      "main": [
+        [{ "node": "Upload Image to LinkedIn", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload Image to LinkedIn": {
+      "main": [
+        [{ "node": "Publish LinkedIn Post", "type": "main", "index": 0 }]
+      ]
+    },
+    "Publish LinkedIn Post": {
+      "main": [
+        [{ "node": "Send Success Notification", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "error-handler"
+  },
+  "meta": {
+    "instanceId": "techscrafts-automation"
+  }
+}
