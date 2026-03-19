@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-vite@latest . --template react)",
+      "Bash(printf '\\\\n')",
+      "Bash(node -e \":*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(kill 4119)"
+    ]
+  }
+}
