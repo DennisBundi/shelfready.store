@@ -1,9 +1,10 @@
 import styles from './App.module.css'
+import Navbar from './components/Navbar/Navbar'
 
 function App() {
   return (
     <div className={styles.app}>
-      <p style={{ color: 'white', padding: '2rem' }}>Sections go here</p>
+      <Navbar />
     </div>
   )
 }
