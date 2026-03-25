@@ -16,13 +16,19 @@ type Props = {
 export default function UploadZone({ userId, onUpload, onClear, uploading, onUploading }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   async function handleFile(file: File) {
+    setUploadError(null)
     if (!file.type.startsWith("image/")) return
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("Image must be under 10 MB")
+      return
+    }
     setPreview(URL.createObjectURL(file))
     onUploading(true)
 
@@ -39,6 +45,7 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
   function handleClear() {
     if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
+    setUploadError(null)
     onClear()
     if (inputRef.current) inputRef.current.value = ""
   }
@@ -66,7 +73,11 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Upload product image"
       onClick={() => inputRef.current?.click()}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click() } }}
       onDragOver={e => { e.preventDefault(); setDragOver(true) }}
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
@@ -79,6 +90,9 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
       <p className="text-sm text-gray-500 text-center px-4">
         Drag & drop your product photo<br />or click to browse
       </p>
+      {uploadError && (
+        <p role="alert" className="text-xs text-red-500 px-4 text-center">{uploadError}</p>
+      )}
       <input
         ref={inputRef}
         type="file"

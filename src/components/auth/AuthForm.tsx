@@ -37,6 +37,7 @@ export default function AuthForm({ mode }: Props) {
     }
 
     setLoading(false)
+    router.refresh()
     router.push("/generate")
   }
 

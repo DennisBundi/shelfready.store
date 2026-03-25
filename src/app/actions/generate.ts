@@ -4,6 +4,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
+// gemini-2.0-flash-exp supports responseModalities: ["image", "text"]
+// which is not yet reflected in the @google/generative-ai v0.24.1 type definitions.
+const GEMINI_MODEL = "gemini-2.0-flash-exp"
+
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
   "gradient":      "Place this product on a soft pastel gradient background, pink to purple, editorial style.",
@@ -37,7 +41,18 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
   if (claimError) return { error: "Could not load profile" }
 
   if (!claimed || claimed.length === 0) {
-    // demo_used was already true — user is gated
+    // Could be gated (demo_used=true) or no profile row (new user edge case)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile) {
+      return { error: "Profile not found. Please sign out and sign back in." }
+    }
+
+    // Profile exists — demo_used is true, user is gated
     await supabase.from("generations").insert({
       user_id: user.id,
       input_image_url: input.inputImageUrl,
@@ -50,7 +65,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
   // Call Gemini
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
 
     // Fetch the uploaded image as base64
     const imageRes = await fetch(input.inputImageUrl)
