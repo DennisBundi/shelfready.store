@@ -38,8 +38,12 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
     onUploading(false)
     if (error) { setPreview(null); return }
 
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path)
-    onUpload(data.publicUrl)
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from("product-images")
+      .createSignedUrl(path, 3600)
+
+    if (signedError || !signedData) { setPreview(null); return }
+    onUpload(signedData.signedUrl)
   }
 
   function handleClear() {
