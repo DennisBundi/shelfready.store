@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(frontend-tools:feature-planner)",
+      "Bash(git checkout:*)",
+      "Bash(npx:*)",
+      "Bash(# Move all scaffold files into ShelfReady \\(excluding docs which already exists, and .git which already exists\\)\ncp -r /c/Users/user/Projects/shelfready-scaffold/src /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/next.config.mjs /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/next-env.d.ts /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/package.json /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/package-lock.json /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/postcss.config.mjs /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/README.md /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/tailwind.config.ts /c/Users/user/Projects/ShelfReady/\ncp /c/Users/user/Projects/shelfready-scaffold/tsconfig.json /c/Users/user/Projects/ShelfReady/\necho \"Files copied\")",
+      "Bash(# Copy node_modules\ncp -r /c/Users/user/Projects/shelfready-scaffold/node_modules /c/Users/user/Projects/ShelfReady/\necho \"node_modules copied\")",
+      "Bash(npm install:*)",
+      "Bash(node:*)",
+      "Bash(npm run:*)",
+      "Bash(cp \"/c/Users/user/Downloads/Screenshot 2026-03-23 171855.png\" /c/Users/user/Projects/ShelfReady/public/before.png)",
+      "Bash(cp \"/c/Users/user/Downloads/Gemini_Generated_Image_tn7k8stn7k8stn7k.png\" /c/Users/user/Projects/ShelfReady/public/after.png)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(xargs sed:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(python3 -c \":*)",
+      "Bash(gh run:*)"
+    ]
+  }
+}
