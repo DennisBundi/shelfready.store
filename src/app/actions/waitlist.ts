@@ -1,6 +1,6 @@
 "use server";
 
-import { createSupabaseClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 
 export type WaitlistResult =
@@ -94,7 +94,7 @@ export async function joinWaitlist(
     return { status: "error", message: "Supabase is not configured. Add credentials to .env.local." };
   }
 
-  const supabase = createSupabaseClient();
+  const supabase = createClient();
   const normalizedEmail = email.toLowerCase().trim();
   const normalizedName = firstName.trim() || null;
 
