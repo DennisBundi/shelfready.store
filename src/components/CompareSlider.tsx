@@ -43,7 +43,7 @@ export default function CompareSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden cursor-col-resize select-none"
+      className="relative w-full aspect-[3/2] overflow-hidden cursor-col-resize select-none"
       role="slider"
       aria-label="Before and after comparison"
       aria-valuenow={Math.round(position)}

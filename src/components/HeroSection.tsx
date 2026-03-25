@@ -47,10 +47,10 @@ export default function HeroSection() {
           {/* Right: compare slider */}
           <div className="animate-fade-in-up anim-delay-300 w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
             <CompareSlider
-              beforeSrc="/before.png"
-              afterSrc="/after.png"
-              beforeAlt="Clothing on mannequins in a store — the old way"
-              afterAlt="AI-generated model wearing the same clothing in a lifestyle scene"
+              beforeSrc="/after.png"
+              afterSrc="/before.png"
+              beforeAlt="AI-generated model wearing the same clothing in a lifestyle scene"
+              afterAlt="Clothing on mannequins in a store — the old way"
             />
             <p className="text-center text-xs text-gray-600 mt-3">
               Drag to compare → real result from ShelfReady
