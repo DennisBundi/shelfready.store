@@ -56,7 +56,7 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
 
   if (preview) {
     return (
-      <div className="relative w-full aspect-square max-w-xs rounded-xl overflow-hidden border border-gray-200">
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-gray-200">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={preview} alt="Product preview" className="w-full h-full object-contain bg-gray-50" />
         <button
@@ -86,7 +86,7 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
       className={cn(
-        "w-full max-w-xs aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors",
+        "w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors",
         dragOver ? "border-brand bg-brand-light" : "border-gray-300 hover:border-brand hover:bg-brand-light/50"
       )}
     >

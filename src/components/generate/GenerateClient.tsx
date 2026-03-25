@@ -6,76 +6,163 @@ import PresetPicker, { type Preset } from "./PresetPicker"
 import ResultArea from "./ResultArea"
 import { Button } from "@/components/ui/button"
 import { generateImage } from "@/app/actions/generate"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type UIState = "idle" | "uploading" | "ready" | "generating" | "done" | "gated" | "error"
+type Step = 1 | 2 | 3
+type GenerateState = "idle" | "generating" | "done" | "gated" | "error"
 
 type Props = { userId: string }
 
+function StepDots({ step }: { step: Step }) {
+  return (
+    <div className="flex items-center justify-center gap-2 mb-6">
+      {([1, 2, 3] as Step[]).map(s => (
+        <div
+          key={s}
+          className={cn(
+            "rounded-full transition-all duration-200",
+            s < step
+              ? "w-2 h-2 bg-brand"
+              : s === step
+              ? "w-2.5 h-2.5 bg-brand ring-2 ring-brand/30 ring-offset-1"
+              : "w-2 h-2 border-2 border-gray-300 bg-white"
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
 export default function GenerateClient({ userId }: Props) {
+  const [step, setStep] = useState<Step>(1)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [preset, setPreset] = useState<Preset | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uiState, setUiState] = useState<UIState>("idle")
+  const [generateState, setGenerateState] = useState<GenerateState>("idle")
   const [outputUrl, setOutputUrl] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const canGenerate = !!imageUrl && !!preset && !uploading && uiState !== "generating"
-
   async function handleGenerate() {
     if (!imageUrl || !preset) return
-    setUiState("generating")
-    setErrorMsg(null)
+    setGenerateState("generating")
+    setStep(3)
 
     const result = await generateImage({ inputImageUrl: imageUrl, preset })
 
     if ("error" in result) {
       setErrorMsg(result.error)
-      setUiState("error")
+      setGenerateState("error")
     } else if (result.gated) {
-      setUiState("gated")
+      setGenerateState("gated")
     } else {
       setOutputUrl(result.outputUrl)
-      setUiState("done")
+      setGenerateState("done")
     }
   }
 
+  function handleReset() {
+    setStep(1)
+    setImageUrl(null)
+    setPreset(null)
+    setGenerateState("idle")
+    setOutputUrl(null)
+    setErrorMsg(null)
+  }
+
   return (
-    <div className="flex flex-col items-center gap-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-brand-navy">Generate your product photo</h1>
-        <p className="text-gray-500 text-sm mt-1">Upload your product, pick a style, done.</p>
+    <div className="max-w-lg mx-auto">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+
+        {/* Step 1: Upload */}
+        {step === 1 && (
+          <>
+            <StepDots step={1} />
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-brand-navy">Upload your product</h2>
+              <p className="text-sm text-gray-500 mt-1">A clean photo on any background works best</p>
+            </div>
+            <UploadZone
+              userId={userId}
+              onUpload={url => setImageUrl(url)}
+              onClear={() => setImageUrl(null)}
+              uploading={uploading}
+              onUploading={setUploading}
+            />
+            <div className="mt-6">
+              <Button
+                onClick={() => setStep(2)}
+                disabled={!imageUrl || uploading}
+                className="w-full bg-brand hover:bg-brand-hover text-white h-11 font-medium gap-2"
+              >
+                Continue <ArrowRight size={16} aria-hidden="true" />
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Step 2: Choose Style */}
+        {step === 2 && (
+          <>
+            <StepDots step={2} />
+            <div className="mb-4">
+              <button
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={14} aria-hidden="true" /> Back
+              </button>
+            </div>
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-brand-navy">Choose a style</h2>
+              <p className="text-sm text-gray-500 mt-1">Pick the background for your product shot</p>
+            </div>
+            <PresetPicker value={preset} onChange={setPreset} />
+            <div className="mt-6">
+              <Button
+                onClick={handleGenerate}
+                disabled={!preset}
+                className="w-full bg-brand hover:bg-brand-hover text-white h-11 font-medium"
+              >
+                Generate Photo
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Result */}
+        {step === 3 && (
+          <div className="flex flex-col items-center gap-4">
+            <ResultArea
+              {...(generateState === "generating"
+                ? { state: "generating" }
+                : generateState === "done" && outputUrl
+                ? { state: "done", outputUrl, inputUrl: imageUrl! }
+                : generateState === "gated"
+                ? { state: "gated", inputUrl: imageUrl! }
+                : { state: "error", message: errorMsg ?? "Something went wrong" })}
+            />
+            {generateState === "done" && (
+              <button
+                onClick={handleReset}
+                className="text-sm text-brand hover:underline"
+              >
+                Generate another →
+              </button>
+            )}
+            {generateState === "error" && (
+              <Button
+                onClick={() => { setStep(2); setGenerateState("idle") }}
+                variant="outline"
+                className="w-full max-w-xs"
+              >
+                Try again
+              </Button>
+            )}
+          </div>
+        )}
+
       </div>
-
-      <UploadZone
-        userId={userId}
-        onUpload={url => { setImageUrl(url); setUiState("ready") }}
-        onClear={() => { setImageUrl(null); setUiState("idle") }}
-        uploading={uploading}
-        onUploading={setUploading}
-      />
-
-      {imageUrl && (
-        <PresetPicker value={preset} onChange={setPreset} />
-      )}
-
-      {imageUrl && (
-        <Button
-          onClick={handleGenerate}
-          disabled={!canGenerate}
-          className="w-full max-w-xs bg-brand hover:bg-brand-hover text-white h-10 font-medium"
-        >
-          Generate photo
-        </Button>
-      )}
-
-      {(uiState === "generating" || uiState === "done" || uiState === "gated" || uiState === "error") && (
-        <ResultArea
-          {...(uiState === "generating" ? { state: "generating" } :
-               uiState === "done" && outputUrl ? { state: "done", outputUrl, inputUrl: imageUrl! } :
-               uiState === "gated" ? { state: "gated", inputUrl: imageUrl! } :
-               { state: "error", message: errorMsg ?? "Something went wrong" })}
-        />
-      )}
     </div>
   )
 }
