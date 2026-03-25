@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -11,7 +12,11 @@ export default function ResultArea(props: Props) {
   if (props.state === "generating") {
     return (
       <div className="w-full max-w-xs aspect-square rounded-xl bg-gray-100 flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        <div
+          role="status"
+          aria-label="Generating photo"
+          className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin"
+        />
         <p className="text-sm text-gray-500">Generating your photo…</p>
       </div>
     )
@@ -55,9 +60,11 @@ export default function ResultArea(props: Props) {
       <div className="absolute inset-0 bg-brand-navy/60 flex flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-white font-semibold text-lg leading-tight">Unlock your full result</p>
         <p className="text-white/80 text-sm">Upgrade to Pro for unlimited generations</p>
-        <Button className="bg-white text-brand-navy hover:bg-gray-100 font-semibold mt-1">
-          Upgrade to Pro
-        </Button>
+        <Link href="/upgrade" className="w-full">
+          <Button className="w-full bg-white text-brand-navy hover:bg-gray-100 font-semibold mt-1">
+            Upgrade to Pro
+          </Button>
+        </Link>
       </div>
     </div>
   )
