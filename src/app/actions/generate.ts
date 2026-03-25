@@ -99,17 +99,21 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
       .from("product-images")
       .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType })
     if (uploadError) throw uploadError
-    const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(outputPath)
+    const { data: signedOutput, error: signedErr } = await supabase.storage
+      .from("product-images")
+      .createSignedUrl(outputPath, 86400) // 24 hours
+
+    if (signedErr || !signedOutput) throw new Error("Could not sign output URL")
 
     // Save generation record (demo_used already flipped atomically above)
     await supabase.from("generations").insert({
       user_id: user.id,
       input_image_url: input.inputImageUrl,
-      output_image_urls: [urlData.publicUrl],
+      output_image_urls: [signedOutput.signedUrl],
       prompt_config: { preset: input.preset },
     })
 
-    return { gated: false, outputUrl: urlData.publicUrl }
+    return { gated: false, outputUrl: signedOutput.signedUrl }
   } catch (err) {
     console.error("[generate] Gemini error:", err)
     return { error: "Generation failed, please try again" }
