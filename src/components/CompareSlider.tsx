@@ -32,12 +32,29 @@ export default function CompareSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt
     updatePosition(e.clientX)
   }, [updatePosition])
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      setPosition((prev) => Math.max(0, prev - 5))
+    } else if (e.key === "ArrowRight") {
+      setPosition((prev) => Math.min(100, prev + 5))
+    }
+  }, [])
+
   return (
     <div
       ref={containerRef}
       className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden cursor-col-resize select-none"
+      role="slider"
+      aria-label="Before and after comparison"
+      aria-valuenow={Math.round(position)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      tabIndex={0}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
+      onPointerUp={(e) => e.currentTarget.releasePointerCapture(e.pointerId)}
+      onPointerCancel={(e) => e.currentTarget.releasePointerCapture(e.pointerId)}
+      onKeyDown={handleKeyDown}
     >
       {/* Before layer (base) */}
       <Image
@@ -60,7 +77,6 @@ export default function CompareSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt
           fill
           className="object-cover object-center"
           sizes="(max-width: 768px) 100vw, 50vw"
-          priority
         />
       </div>
 
