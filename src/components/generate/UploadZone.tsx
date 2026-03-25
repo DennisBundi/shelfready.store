@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useMemo } from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { Upload, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,8 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
   const inputRef = useRef<HTMLInputElement>(null)
   const supabase = useMemo(() => createClient(), [])
 
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
+
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) return
     setPreview(URL.createObjectURL(file))
@@ -35,6 +37,7 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
   }
 
   function handleClear() {
+    if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     onClear()
     if (inputRef.current) inputRef.current.value = ""
@@ -47,9 +50,10 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
         <img src={preview} alt="Product preview" className="w-full h-full object-contain bg-gray-50" />
         <button
           onClick={handleClear}
+          aria-label="Remove image"
           className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-50"
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
         {uploading && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-sm text-gray-500">
