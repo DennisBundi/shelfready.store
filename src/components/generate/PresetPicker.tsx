@@ -23,7 +23,7 @@ export default function PresetPicker({ value, onChange }: Props) {
           type="button"
           onClick={() => onChange(preset.id)}
           className={cn(
-            "rounded-xl border-2 p-3 text-left transition-all",
+            "rounded-xl border-2 p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
             value === preset.id
               ? "border-brand ring-2 ring-brand/20"
               : "border-gray-200 hover:border-gray-300"
