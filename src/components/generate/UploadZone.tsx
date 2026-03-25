@@ -33,16 +33,26 @@ export default function UploadZone({ userId, onUpload, onClear, uploading, onUpl
     onUploading(true)
 
     const path = `${userId}/${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from("product-images").upload(path, file)
+    const { error } = await supabase.storage.from("Product-images").upload(path, file)
 
     onUploading(false)
-    if (error) { setPreview(null); return }
+    if (error) {
+      console.error("[upload] storage error:", error)
+      setUploadError(`Upload failed: ${error.message}`)
+      setPreview(null)
+      return
+    }
 
     const { data: signedData, error: signedError } = await supabase.storage
-      .from("product-images")
+      .from("Product-images")
       .createSignedUrl(path, 3600)
 
-    if (signedError || !signedData) { setPreview(null); return }
+    if (signedError || !signedData) {
+      console.error("[upload] signed URL error:", signedError)
+      setUploadError(`Could not process image: ${signedError?.message ?? "unknown error"}`)
+      setPreview(null)
+      return
+    }
     onUpload(signedData.signedUrl)
   }
 

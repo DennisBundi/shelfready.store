@@ -96,11 +96,11 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
     const outputPath = `${user.id}/output-${Date.now()}.jpg`
     const outputBuffer = Buffer.from(imagePart.inlineData.data, "base64")
     const { error: uploadError } = await supabase.storage
-      .from("product-images")
+      .from("Product-images")
       .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType })
     if (uploadError) throw uploadError
     const { data: signedOutput, error: signedErr } = await supabase.storage
-      .from("product-images")
+      .from("Product-images")
       .createSignedUrl(outputPath, 86400) // 24 hours
 
     if (signedErr || !signedOutput) throw new Error("Could not sign output URL")
