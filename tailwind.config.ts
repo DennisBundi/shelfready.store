@@ -11,16 +11,18 @@ const config: Config = {
       colors: {
         brand: {
           DEFAULT: "#1D9E75",
-          light: "#E1F5EE",
-          hover: "#0F6E56",
-          navy: "#1A2E35",
+          light:   "#E1F5EE",
+          hover:   "#0F6E56",
+          navy:    "#1A2E35",
         },
+        accent:  "#7F77DD",
+        warning: "#EF9F27",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
 export default config;
