@@ -89,8 +89,8 @@ section, footer {
 
 @layer base {
   .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
+    --font-heading: var(--font-geist-sans);
+    --font-sans: var(--font-geist-sans);
   }
   :root {
     --background: oklch(1 0 0);
