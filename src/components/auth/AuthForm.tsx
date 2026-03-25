@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
@@ -10,7 +10,7 @@ type Props = { mode: "login" | "signup" }
 
 export default function AuthForm({ mode }: Props) {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -36,8 +36,8 @@ export default function AuthForm({ mode }: Props) {
       if (error) { setError(error.message); setLoading(false); return }
     }
 
+    setLoading(false)
     router.push("/generate")
-    router.refresh()
   }
 
   return (
@@ -48,42 +48,48 @@ export default function AuthForm({ mode }: Props) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Email</label>
+          <label htmlFor="auth-email" className="text-sm font-medium text-gray-700">Email</label>
           <input
+            id="auth-email"
             type="email"
             required
+            autoComplete="email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+            onChange={e => { setEmail(e.target.value); setError(null) }}
+            className="rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Password</label>
+          <label htmlFor="auth-password" className="text-sm font-medium text-gray-700">Password</label>
           <input
+            id="auth-password"
             type="password"
             required
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
             value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+            onChange={e => { setPassword(e.target.value); setError(null) }}
+            className="rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
         </div>
 
         {mode === "signup" && (
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Confirm password</label>
+            <label htmlFor="auth-confirm" className="text-sm font-medium text-gray-700">Confirm password</label>
             <input
+              id="auth-confirm"
               type="password"
               required
+              autoComplete="new-password"
               value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              onChange={e => { setConfirm(e.target.value); setError(null) }}
+              className="rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
           </div>
         )}
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          <p role="alert" className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
         )}
 
         <Button type="submit" disabled={loading} className="w-full mt-1 bg-brand hover:bg-brand-hover text-white h-10">
