@@ -26,15 +26,18 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "Not authenticated" }
 
-  // Check demo gate
-  const { data: profile } = await supabase
+  // Atomically claim the demo slot. Returns the row only if demo_used was false.
+  const { data: claimed, error: claimError } = await supabase
     .from("profiles")
-    .select("demo_used")
+    .update({ demo_used: true })
     .eq("id", user.id)
-    .single()
+    .eq("demo_used", false)
+    .select("id")
 
-  if (profile?.demo_used) {
-    // Capture intent — empty generation record
+  if (claimError) return { error: "Could not load profile" }
+
+  if (!claimed || claimed.length === 0) {
+    // demo_used was already true — user is gated
     await supabase.from("generations").insert({
       user_id: user.id,
       input_image_url: input.inputImageUrl,
@@ -77,20 +80,19 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
     // Upload generated image to Storage
     const outputPath = `${user.id}/output-${Date.now()}.jpg`
     const outputBuffer = Buffer.from(imagePart.inlineData.data, "base64")
-    await supabase.storage.from("product-images").upload(outputPath, outputBuffer, {
-      contentType: imagePart.inlineData.mimeType,
-    })
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType })
+    if (uploadError) throw uploadError
     const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(outputPath)
 
-    // Save generation record + flip demo_used
+    // Save generation record (demo_used already flipped atomically above)
     await supabase.from("generations").insert({
       user_id: user.id,
       input_image_url: input.inputImageUrl,
       output_image_urls: [urlData.publicUrl],
       prompt_config: { preset: input.preset },
     })
-
-    await supabase.from("profiles").update({ demo_used: true }).eq("id", user.id)
 
     return { gated: false, outputUrl: urlData.publicUrl }
   } catch (err) {
