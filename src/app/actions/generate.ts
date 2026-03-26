@@ -1,16 +1,14 @@
 "use server"
 
-import { GoogleGenAI, Modality } from "@google/genai"
+import { HfInference } from "@huggingface/inference"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-const GEMINI_MODEL = "gemini-3.1-flash-image-preview"
-
 const PRESET_PROMPTS: Record<Preset, string> = {
-  "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
-  "gradient":      "Place this product on a soft pastel gradient background, pink to purple, editorial style.",
-  "lifestyle":     "Place this product in a natural lifestyle setting with warm ambient light.",
-  "minimal-dark":  "Place this product on a dark minimal background with dramatic moody lighting.",
+  "white-studio":  "Place this product on a clean white studio background with soft professional lighting. Keep the product exactly as-is, only change the background and lighting.",
+  "gradient":      "Place this product on a soft pastel gradient background, pink to purple, editorial style. Keep the product exactly as-is, only change the background and lighting.",
+  "lifestyle":     "Place this product in a natural lifestyle setting with warm ambient light. Keep the product exactly as-is, only change the background and lighting.",
+  "minimal-dark":  "Place this product on a dark minimal background with dramatic moody lighting. Keep the product exactly as-is, only change the background and lighting.",
 }
 
 type GenerateInput = {
@@ -39,7 +37,6 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
   if (claimError) return { error: "Could not load profile" }
 
   if (!claimed || claimed.length === 0) {
-    // Could be gated (demo_used=true) or no profile row (new user edge case)
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
@@ -60,49 +57,39 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
     return { gated: true }
   }
 
-  // Call Gemini
+  // Call Hugging Face instruct-pix2pix (image-to-image editing)
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+    const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
 
-    // Fetch the uploaded image as base64
+    // Fetch the uploaded image as a blob
     const imageRes = await fetch(input.inputImageUrl)
-    const imageBuffer = await imageRes.arrayBuffer()
-    const base64 = Buffer.from(imageBuffer).toString("base64")
-    const mimeType = imageRes.headers.get("content-type") ?? "image/jpeg"
+    const imageBlob = await imageRes.blob()
 
-    const result = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: [{
-        role: "user",
-        parts: [
-          { inlineData: { mimeType, data: base64 } },
-          { text: PRESET_PROMPTS[input.preset] + " Keep the product exactly as-is, only change the background and lighting." },
-        ],
-      }],
-      config: {
-        responseModalities: [Modality.IMAGE, Modality.TEXT],
+    const resultBlob = await hf.imageToImage({
+      model: "timbrooks/instruct-pix2pix",
+      inputs: imageBlob,
+      parameters: {
+        prompt: PRESET_PROMPTS[input.preset],
+        num_inference_steps: 20,
+        image_guidance_scale: 1.5,
+        guidance_scale: 7.5,
       },
     })
 
-    // Extract generated image from response
-    const parts = result.candidates?.[0]?.content?.parts ?? []
-    const imagePart = parts.find(p => p.inlineData)
-    if (!imagePart?.inlineData) return { error: "No image returned from Gemini" }
-
     // Upload generated image to Storage
     const outputPath = `${user.id}/output-${Date.now()}.jpg`
-    const outputBuffer = Buffer.from(imagePart.inlineData.data ?? "", "base64")
+    const outputBuffer = Buffer.from(await resultBlob.arrayBuffer())
     const { error: uploadError } = await supabase.storage
       .from("Product-images")
-      .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType ?? "image/jpeg" })
+      .upload(outputPath, outputBuffer, { contentType: "image/jpeg" })
     if (uploadError) throw uploadError
+
     const { data: signedOutput, error: signedErr } = await supabase.storage
       .from("Product-images")
       .createSignedUrl(outputPath, 86400) // 24 hours
-
     if (signedErr || !signedOutput) throw new Error("Could not sign output URL")
 
-    // Save generation record (demo_used already flipped atomically above)
+    // Save generation record
     await supabase.from("generations").insert({
       user_id: user.id,
       input_image_url: input.inputImageUrl,
@@ -112,8 +99,14 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
     return { gated: false, outputUrl: signedOutput.signedUrl }
   } catch (err) {
+    // Roll back demo slot so the user can try again
+    await supabase
+      .from("profiles")
+      .update({ demo_used: false })
+      .eq("id", user.id)
+
     const msg = err instanceof Error ? err.message : String(err)
-    console.error("[generate] Gemini error:", msg)
+    console.error("[generate] HF error:", msg)
     return { error: `Generation failed: ${msg}` }
   }
 }
