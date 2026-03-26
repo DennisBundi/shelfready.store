@@ -62,7 +62,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
   // Call Gemini
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { apiVersion: "v1alpha" } })
 
     // Fetch the uploaded image as base64
     const imageRes = await fetch(input.inputImageUrl)
