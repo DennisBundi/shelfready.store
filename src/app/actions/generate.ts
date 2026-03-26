@@ -4,7 +4,7 @@ import { GoogleGenAI, Modality } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-const GEMINI_MODEL = "gemini-2.0-flash-exp"
+const GEMINI_MODEL = "gemini-2.5-flash-image"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
@@ -62,7 +62,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
   // Call Gemini
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { apiVersion: "v1alpha" } })
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
     // Fetch the uploaded image as base64
     const imageRes = await fetch(input.inputImageUrl)
