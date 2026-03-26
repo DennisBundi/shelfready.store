@@ -1,11 +1,9 @@
 "use server"
 
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenAI, Modality } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-// gemini-2.0-flash-preview-image-generation supports responseModalities: ["image", "text"]
-// which is not yet reflected in the @google/generative-ai v0.24.1 type definitions.
 const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
@@ -64,8 +62,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
   // Call Gemini
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL })
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
     // Fetch the uploaded image as base64
     const imageRes = await fetch(input.inputImageUrl)
@@ -73,7 +70,8 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
     const base64 = Buffer.from(imageBuffer).toString("base64")
     const mimeType = imageRes.headers.get("content-type") ?? "image/jpeg"
 
-    const result = await model.generateContent({
+    const result = await ai.models.generateContent({
+      model: GEMINI_MODEL,
       contents: [{
         role: "user",
         parts: [
@@ -81,23 +79,22 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
           { text: PRESET_PROMPTS[input.preset] + " Keep the product exactly as-is, only change the background and lighting." },
         ],
       }],
-      generationConfig: {
-        // @ts-expect-error - responseModalities is available in gemini-2.0-flash-exp
-        responseModalities: ["image", "text"],
+      config: {
+        responseModalities: [Modality.IMAGE, Modality.TEXT],
       },
     })
 
     // Extract generated image from response
-    const parts = result.response.candidates?.[0]?.content?.parts ?? []
-    const imagePart = parts.find((p: { inlineData?: { mimeType: string; data: string } }) => p.inlineData)
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+    const imagePart = parts.find(p => p.inlineData)
     if (!imagePart?.inlineData) return { error: "No image returned from Gemini" }
 
     // Upload generated image to Storage
     const outputPath = `${user.id}/output-${Date.now()}.jpg`
-    const outputBuffer = Buffer.from(imagePart.inlineData.data, "base64")
+    const outputBuffer = Buffer.from(imagePart.inlineData.data ?? "", "base64")
     const { error: uploadError } = await supabase.storage
       .from("Product-images")
-      .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType })
+      .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType ?? "image/jpeg" })
     if (uploadError) throw uploadError
     const { data: signedOutput, error: signedErr } = await supabase.storage
       .from("Product-images")
