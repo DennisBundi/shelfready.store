@@ -4,9 +4,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-// gemini-2.0-flash supports responseModalities: ["image", "text"]
+// gemini-2.0-flash-preview-image-generation supports responseModalities: ["image", "text"]
 // which is not yet reflected in the @google/generative-ai v0.24.1 type definitions.
-const GEMINI_MODEL = "gemini-2.0-flash"
+const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
