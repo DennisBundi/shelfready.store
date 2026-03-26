@@ -4,9 +4,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-// gemini-2.0-flash-exp supports responseModalities: ["image", "text"]
+// gemini-2.0-flash supports responseModalities: ["image", "text"]
 // which is not yet reflected in the @google/generative-ai v0.24.1 type definitions.
-const GEMINI_MODEL = "gemini-2.0-flash-exp"
+const GEMINI_MODEL = "gemini-2.0-flash"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
@@ -115,7 +115,8 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
     return { gated: false, outputUrl: signedOutput.signedUrl }
   } catch (err) {
-    console.error("[generate] Gemini error:", err)
-    return { error: "Generation failed, please try again" }
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[generate] Gemini error:", msg)
+    return { error: `Generation failed: ${msg}` }
   }
 }
