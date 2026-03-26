@@ -1,6 +1,5 @@
 "use server"
 
-import { GoogleGenAI, Modality } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
@@ -61,6 +60,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
 
   // Call Gemini image generation
   try {
+    const { GoogleGenAI, Modality } = await import("@google/genai")
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
     // Fetch the uploaded image as base64
