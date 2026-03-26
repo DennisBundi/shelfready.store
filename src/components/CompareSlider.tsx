@@ -43,7 +43,7 @@ export default function CompareSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-[3/2] overflow-hidden cursor-col-resize select-none"
+      className="relative w-full aspect-[3/2] lg:aspect-[4/3] overflow-hidden cursor-col-resize select-none"
       role="slider"
       aria-label="Before and after comparison"
       aria-valuenow={Math.round(position)}
@@ -57,14 +57,16 @@ export default function CompareSlider({ beforeSrc, afterSrc, beforeAlt, afterAlt
       onKeyDown={handleKeyDown}
     >
       {/* Before layer (base) */}
-      <Image
-        src={beforeSrc}
-        alt={beforeAlt}
-        fill
-        className="object-cover object-center"
-        sizes="(max-width: 768px) 100vw, 50vw"
-        priority
-      />
+      <div className="absolute inset-0 bg-gray-200">
+        <Image
+          src={beforeSrc}
+          alt={beforeAlt}
+          fill
+          className="object-contain object-center"
+          sizes="(max-width: 768px) 100vw, 50vw"
+          priority
+        />
+      </div>
 
       {/* After layer (clipped) */}
       <div
