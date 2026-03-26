@@ -4,7 +4,7 @@ import { GoogleGenAI, Modality } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
 
-const GEMINI_MODEL = "gemini-2.0-flash-preview-image-generation"
+const GEMINI_MODEL = "gemini-2.0-flash-exp"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting.",
