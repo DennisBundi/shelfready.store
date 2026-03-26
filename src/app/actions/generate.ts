@@ -1,8 +1,10 @@
 "use server"
 
-import { HfInference } from "@huggingface/inference"
+import { GoogleGenAI, Modality } from "@google/genai"
 import { createClient } from "@/lib/supabase/server"
 import type { Preset } from "@/components/generate/PresetPicker"
+
+const GEMINI_MODEL = "gemini-2.5-flash-image"
 
 const PRESET_PROMPTS: Record<Preset, string> = {
   "white-studio":  "Place this product on a clean white studio background with soft professional lighting. Keep the product exactly as-is, only change the background and lighting.",
@@ -57,31 +59,41 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
     return { gated: true }
   }
 
-  // Call Hugging Face instruct-pix2pix (image-to-image editing)
+  // Call Gemini image generation
   try {
-    const hf = new HfInference(process.env.HUGGINGFACE_API_KEY)
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
-    // Fetch the uploaded image as a blob
+    // Fetch the uploaded image as base64
     const imageRes = await fetch(input.inputImageUrl)
-    const imageBlob = await imageRes.blob()
+    const imageBuffer = await imageRes.arrayBuffer()
+    const base64 = Buffer.from(imageBuffer).toString("base64")
+    const mimeType = imageRes.headers.get("content-type") ?? "image/jpeg"
 
-    const resultBlob = await hf.imageToImage({
-      model: "timbrooks/instruct-pix2pix",
-      inputs: imageBlob,
-      parameters: {
-        prompt: PRESET_PROMPTS[input.preset],
-        num_inference_steps: 20,
-        image_guidance_scale: 1.5,
-        guidance_scale: 7.5,
+    const result = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [{
+        role: "user",
+        parts: [
+          { inlineData: { mimeType, data: base64 } },
+          { text: PRESET_PROMPTS[input.preset] },
+        ],
+      }],
+      config: {
+        responseModalities: [Modality.IMAGE, Modality.TEXT],
       },
     })
 
+    // Extract generated image from response
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+    const imagePart = parts.find(p => p.inlineData)
+    if (!imagePart?.inlineData) return { error: "No image returned from Gemini" }
+
     // Upload generated image to Storage
     const outputPath = `${user.id}/output-${Date.now()}.jpg`
-    const outputBuffer = Buffer.from(await resultBlob.arrayBuffer())
+    const outputBuffer = Buffer.from(imagePart.inlineData.data ?? "", "base64")
     const { error: uploadError } = await supabase.storage
       .from("Product-images")
-      .upload(outputPath, outputBuffer, { contentType: "image/jpeg" })
+      .upload(outputPath, outputBuffer, { contentType: imagePart.inlineData.mimeType ?? "image/jpeg" })
     if (uploadError) throw uploadError
 
     const { data: signedOutput, error: signedErr } = await supabase.storage
@@ -106,7 +118,7 @@ export async function generateImage(input: GenerateInput): Promise<GenerateResul
       .eq("id", user.id)
 
     const msg = err instanceof Error ? err.message : String(err)
-    console.error("[generate] HF error:", msg)
+    console.error("[generate] Gemini error:", msg)
     return { error: `Generation failed: ${msg}` }
   }
 }
